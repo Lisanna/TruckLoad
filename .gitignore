@@ -1,2 +1,12 @@
 node_modules
 package-lock.json
+dist
+.DS_Store
+.vscode
+.vscode-test
+.vscode-test-web
+.vscode-test-web-extensions
+.vscode-test-web-extensions-cache
+.vscode-test-web-extensions-cache-2
+.vscode-test-web-extensions-cache-3
+.vscode-test-web-extensions-cache-4 

@@ -1,10 +1,14 @@
 {
   "name": "cargo-planner",
   "version": "1.0.0",
+  "homepage": "https://lisanna.github.io/TruckLoad",
+
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "predeploy": "npm run build",
+  "deploy": "gh-pages -d dist"
   },
   "dependencies": {
     "konva": "^9.2.0",
@@ -15,6 +19,7 @@
   "devDependencies": {
     "@vitejs/plugin-react": "^4.7.0",
     "autoprefixer": "^10.4.14",
+    "gh-pages": "^6.3.0",
     "postcss": "^8.4.21",
     "tailwindcss": "^3.4.1",
     "typescript": "^5.0.4",
