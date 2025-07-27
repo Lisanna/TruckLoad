@@ -8,9 +8,10 @@ const itemDefaults = {
   ewc_1000x1200: { length: 120, width: 100, weight: 35 }
 };
 
-export default function ItemForm() {
+export default function ItemForm({ onAddItems }: { onAddItems: (items: any[]) => void }) {
   const [type, setType] = useState("pallet");
   const [details, setDetails] = useState(itemDefaults[type]);
+  const [quantity, setQuantity] = useState(1);
 
   const handleTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selected = e.target.value;
@@ -25,10 +26,16 @@ export default function ItemForm() {
     });
   };
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const items = Array.from({ length: quantity }, (_, i) => ({ id: Date.now() + i, type, ...details }));
+    onAddItems(items);
+  };
+
   return (
     <div className="p-4 bg-white rounded shadow">
       <h2 className="text-lg font-semibold mb-2">Add Cargo Item</h2>
-      <form className="space-y-2">
+      <form className="space-y-2" onSubmit={handleSubmit}>
         <select className="w-full p-2 border rounded" value={type} onChange={handleTypeChange}>
           <option value="pallet">Pallet (120x80)</option>
           <option value="tank_small">Tank Small (60Ø)</option>
@@ -40,8 +47,9 @@ export default function ItemForm() {
         {details.width && <input name="width" value={details.width} onChange={handleInputChange} className="w-full p-2 border rounded" placeholder="Width (cm)" type="number" />}
         {details.diameter && <input name="diameter" value={details.diameter} onChange={handleInputChange} className="w-full p-2 border rounded" placeholder="Diameter (cm)" type="number" />}
         <input name="weight" value={details.weight} onChange={handleInputChange} className="w-full p-2 border rounded" placeholder="Weight (kg)" type="number" />
+        <input name="quantity" value={quantity} onChange={(e) => setQuantity(parseInt(e.target.value) || 1)} className="w-full p-2 border rounded" placeholder="Quantity" type="number" min={1} />
         <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded">
-          Add Item
+          Add Item(s)
         </button>
       </form>
     </div>
