@@ -1,57 +1,125 @@
+// src/components/ItemForm.tsx
 import React, { useState } from 'react';
 
-const itemDefaults = {
-  pallet: { length: 120, width: 80, weight: 25 },
-  tank_small: { diameter: 60, weight: 50 },
-  tank_big: { diameter: 100, weight: 80 },
-  ewc_800x1200: { length: 120, width: 80, weight: 30 },
-  ewc_1000x1200: { length: 120, width: 100, weight: 35 }
+interface Props {
+  onAddItems: (items: any[]) => void;
+}
+
+const defaultOptions = {
+  pallet: { type: 'pallet', length: 120, width: 80, weight: 100 },
+  ewc: { type: 'ewc', length: 120, width: 80, weight: 20 },
+  tank_small: { type: 'tank', diameter: 60, weight: 50 },
+  tank_large: { type: 'tank', diameter: 100, weight: 80 }
 };
 
-export default function ItemForm({ onAddItems }: { onAddItems: (items: any[]) => void }) {
-  const [type, setType] = useState("pallet");
-  const [details, setDetails] = useState(itemDefaults[type]);
-  const [quantity, setQuantity] = useState(1);
+export default function ItemForm({ onAddItems }: Props) {
+  const [form, setForm] = useState({
+    type: 'pallet',
+    length: 120,
+    width: 80,
+    diameter: 0,
+    weight: 25,
+    quantity: ''
+  });
 
-  const handleTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const selected = e.target.value;
-    setType(selected);
-    setDetails(itemDefaults[selected]);
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setDetails({
-      ...details,
-      [e.target.name]: parseInt(e.target.value) || 0
-    });
+  const handleChange = (field: string, value: string | number) => {
+    setForm({ ...form, [field]: value });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const items = Array.from({ length: quantity }, (_, i) => ({ id: Date.now() + i, type, ...details }));
+    const qty = parseInt(form.quantity);
+    if (!qty || qty < 1) return;
+
+    const items = Array.from({ length: qty }).map((_, i) => ({
+      id: `${form.type}-${Date.now()}-${i}`,
+      type: form.type,
+      length: form.length,
+      width: form.width,
+      diameter: form.diameter,
+      weight: form.weight
+    }));
     onAddItems(items);
+    setForm({ ...form, quantity: '' });
   };
 
   return (
-    <div className="p-4 bg-white rounded shadow">
-      <h2 className="text-lg font-semibold mb-2">Add Cargo Item</h2>
-      <form className="space-y-2" onSubmit={handleSubmit}>
-        <select className="w-full p-2 border rounded" value={type} onChange={handleTypeChange}>
-          <option value="pallet">Pallet (120x80)</option>
-          <option value="tank_small">Tank Small (60Ø)</option>
-          <option value="tank_big">Tank Big (100Ø)</option>
-          <option value="ewc_800x1200">EWC 800x1200</option>
-          <option value="ewc_1000x1200">EWC 1000x1200</option>
+    <form onSubmit={handleSubmit} className="p-4 bg-white rounded shadow space-y-2">
+      <h2 className="text-lg font-semibold">Add Item</h2>
+
+      <label className="block text-sm">
+        Type:
+        <select
+          className="border p-1 rounded ml-2"
+          value={form.type}
+          onChange={(e) => handleChange('type', e.target.value)}
+        >
+          <option value="pallet">Pallet (80x120)</option>
+          <option value="ewc">EWC (stackable)</option>
+          <option value="tank">Tank</option>
         </select>
-        {details.length && <input name="length" value={details.length} onChange={handleInputChange} className="w-full p-2 border rounded" placeholder="Length (cm)" type="number" />}
-        {details.width && <input name="width" value={details.width} onChange={handleInputChange} className="w-full p-2 border rounded" placeholder="Width (cm)" type="number" />}
-        {details.diameter && <input name="diameter" value={details.diameter} onChange={handleInputChange} className="w-full p-2 border rounded" placeholder="Diameter (cm)" type="number" />}
-        <input name="weight" value={details.weight} onChange={handleInputChange} className="w-full p-2 border rounded" placeholder="Weight (kg)" type="number" />
-        <input name="quantity" value={quantity} onChange={(e) => setQuantity(parseInt(e.target.value) || 1)} className="w-full p-2 border rounded" placeholder="Quantity" type="number" min={1} />
-        <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded">
-          Add Item(s)
-        </button>
-      </form>
-    </div>
+      </label>
+
+      {form.type !== 'tank' ? (
+        <>
+          <label className="block text-sm">
+            Length (cm):
+            <input
+              type="number"
+              className="border p-1 rounded ml-2"
+              value={form.length}
+              onChange={(e) => handleChange('length', Number(e.target.value))}
+            />
+          </label>
+          <label className="block text-sm">
+            Width (cm):
+            <input
+              type="number"
+              className="border p-1 rounded ml-2"
+              value={form.width}
+              onChange={(e) => handleChange('width', Number(e.target.value))}
+            />
+          </label>
+        </>
+      ) : (
+        <label className="block text-sm">
+          Diameter (cm):
+          <input
+            type="number"
+            className="border p-1 rounded ml-2"
+            value={form.diameter}
+            onChange={(e) => handleChange('diameter', Number(e.target.value))}
+          />
+        </label>
+      )}
+
+      <label className="block text-sm">
+        Weight (kg):
+        <input
+          type="number"
+          className="border p-1 rounded ml-2"
+          value={form.weight}
+          onChange={(e) => handleChange('weight', Number(e.target.value))}
+        />
+      </label>
+
+      <label className="block text-sm">
+        Quantity:
+        <input
+          type="number"
+          className="border p-1 rounded ml-2"
+          value={form.quantity}
+          onChange={(e) => handleChange('quantity', e.target.value)}
+          placeholder="e.g. 5"
+        />
+      </label>
+
+      <button
+        type="submit"
+        className="bg-blue-500 text-white px-4 py-1 rounded hover:bg-blue-600"
+      >
+        Add
+      </button>
+    </form>
   );
 }

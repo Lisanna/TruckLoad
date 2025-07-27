@@ -1,39 +1,69 @@
-import React, { useState } from 'react';
+// src/components/TruckSelector.tsx
+import React from 'react';
 
-const defaultTrucks = {
-  "Standard Pianale": { length: 1360, width: 245 },
-  "Frigo Truck": { length: 1360, width: 245 },
-  "Container 40ft": { length: 1200, width: 235 }
+interface Props {
+  truck: { length: number; width: number; height: number };
+  onChange: (truck: { length: number; width: number; height: number }) => void;
+}
+
+const defaultPresets = {
+  Flatbed: { length: 1360, width: 245, height: 270 },
+  Refrigerated: { length: 1320, width: 240, height: 250 },
+  Container: { length: 1200, width: 235, height: 260 }
 };
 
-export default function TruckSelector() {
-  const [truck, setTruck] = useState("Standard Pianale");
-  const [custom, setCustom] = useState(defaultTrucks[truck]);
-
-  const handleSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const selected = e.target.value;
-    setTruck(selected);
-    setCustom(defaultTrucks[selected]);
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setCustom({
-      ...custom,
-      [e.target.name]: parseInt(e.target.value) || 0
-    });
+export default function TruckSelector({ truck, onChange }: Props) {
+  const handleChange = (field: keyof typeof truck, value: number) => {
+    onChange({ ...truck, [field]: value });
   };
 
   return (
-    <div className="p-4 bg-white rounded shadow">
-      <h2 className="text-lg font-semibold mb-2">Select Truck</h2>
-      <select className="w-full p-2 border rounded mb-2" value={truck} onChange={handleSelect}>
-        {Object.keys(defaultTrucks).map((name) => (
-          <option key={name}>{name}</option>
-        ))}
-      </select>
+    <div className="bg-white rounded shadow p-4 mb-4">
+      <h2 className="text-lg font-semibold mb-2">Truck Dimensions</h2>
       <div className="space-y-2">
-        <input name="length" value={custom.length} onChange={handleChange} className="w-full p-2 border rounded" placeholder="Length (cm)" type="number" />
-        <input name="width" value={custom.width} onChange={handleChange} className="w-full p-2 border rounded" placeholder="Width (cm)" type="number" />
+        <label className="block text-sm">
+          Preset:
+          <select
+            className="border p-1 rounded ml-2"
+            onChange={(e) => {
+              const preset = defaultPresets[e.target.value as keyof typeof defaultPresets];
+              if (preset) {
+                onChange(preset);
+              }
+            }}
+          >
+            {Object.keys(defaultPresets).map((key) => (
+              <option key={key} value={key}>{key}</option>
+            ))}
+          </select>
+        </label>
+        <label className="block text-sm">
+          Length (cm):
+          <input
+            type="number"
+            className="border p-1 rounded ml-2"
+            value={truck.length}
+            onChange={(e) => handleChange('length', Number(e.target.value))}
+          />
+        </label>
+        <label className="block text-sm">
+          Width (cm):
+          <input
+            type="number"
+            className="border p-1 rounded ml-2"
+            value={truck.width}
+            onChange={(e) => handleChange('width', Number(e.target.value))}
+          />
+        </label>
+        <label className="block text-sm">
+          Height (cm):
+          <input
+            type="number"
+            className="border p-1 rounded ml-2"
+            value={truck.height}
+            onChange={(e) => handleChange('height', Number(e.target.value))}
+          />
+        </label>
       </div>
     </div>
   );

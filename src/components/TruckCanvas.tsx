@@ -1,52 +1,68 @@
-import React, { useEffect } from 'react';
-import { Stage, Layer, Rect, Text } from 'react-konva';
-import { useState } from 'react';
+// src/components/TruckCanvas.tsx
+import React, { useEffect, useRef, useState } from 'react';
+import { Stage, Layer, Rect, Circle, Text } from 'react-konva';
 
-export default function TruckCanvas({ items, setItems }: { items: any[], setItems: (items: any[]) => void }) {
-  const [dimensions] = useState({ width: 800, height: 400 });
-  const spacing = 5; // gap between default placements
+interface TruckCanvasProps {
+  items: any[];
+  setItems: (items: any[]) => void;
+  length: number;
+  width: number;
+}
+
+export default function TruckCanvas({ items, setItems, length, width }: TruckCanvasProps) {
+  const spacing = 0;
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
+
+  useEffect(() => {
+    if (containerRef.current) {
+      const availableWidth = containerRef.current.offsetWidth;
+      const newScale = (availableWidth * 0.95) / (length + 600); // includes staging area
+      setScale(newScale);
+    }
+  }, [length, width]);
 
   const getSize = (item: any) => {
-    const width = item.diameter || item.width;
-    const height = item.diameter || item.length;
-    return { width, height };
+    const w = item.diameter || item.width;
+    const h = item.diameter || item.length;
+    return { width: w, height: h };
   };
 
-  const isOverlappingWithAny = (x: number, y: number, width: number, height: number, currentIndex: number, placed: any[]) => {
-    return placed.some((other, i) => {
-      if (i === currentIndex || other.x == null || other.y == null) return false;
+  const isOverlapping = (x: number, y: number, w: number, h: number, ignoreId: string) => {
+    return items.some((other) => {
+      if (other.id === ignoreId || other.x == null || other.y == null) return false;
       const { width: ow, height: oh } = getSize(other);
-      return x < other.x + ow && x + width > other.x && y < other.y + oh && y + height > other.y;
+      return x < other.x + ow && x + w > other.x && y < other.y + oh && y + h > other.y;
     });
   };
 
-  const recomputeLayout = (inputItems: any[]) => {
+  const recomputeLayout = () => {
     const placed: any[] = [];
+    const unplaced: any[] = [];
     let cursorX = spacing;
     let cursorY = spacing;
     let rowHeight = 0;
 
-    const updated = inputItems.map((item, index) => {
-      const { width, height } = getSize(item);
-      if (cursorX + width > dimensions.width) {
+    const updated = items.map((item) => {
+      if (item.x != null && item.y != null) return item;
+      const { width: w, height: h } = getSize(item);
+
+      if (cursorX + w > length) {
         cursorX = spacing;
         cursorY += rowHeight + spacing;
         rowHeight = 0;
       }
 
-      while (isOverlappingWithAny(cursorX, cursorY, width, height, index, placed)) {
-        cursorX += spacing + width;
-        if (cursorX + width > dimensions.width) {
-          cursorX = spacing;
-          cursorY += rowHeight + spacing;
-          rowHeight = 0;
-        }
+      if (cursorY + h > width) {
+        const holdingX = length + spacing * 2;
+        const holdingY = spacing + unplaced.length * (h + spacing);
+        return { ...item, x: holdingX, y: holdingY, unplaced: true };
       }
 
-      const positioned = { ...item, x: cursorX, y: cursorY };
+      const positioned = { ...item, x: cursorX, y: cursorY, unplaced: false };
       placed.push(positioned);
-      cursorX += width + spacing;
-      rowHeight = Math.max(rowHeight, height);
+      cursorX += w + spacing;
+      rowHeight = Math.max(rowHeight, h);
       return positioned;
     });
 
@@ -54,78 +70,78 @@ export default function TruckCanvas({ items, setItems }: { items: any[], setItem
   };
 
   useEffect(() => {
-    if (items.length > 0 && items.some(item => item.x == null || item.y == null)) {
-      recomputeLayout(items);
+    if (items.some(item => item.x == null || item.y == null)) {
+      recomputeLayout();
     }
   }, [items]);
 
-  const isOverlapping = (newX: number, newY: number, index: number, itemSize: any) => {
-    return items.some((item, i) => {
-      if (i === index) return false;
-      const otherSize = getSize(item);
-      return (
-        newX < item.x + otherSize.width && newX + itemSize.width > item.x &&
-        newY < item.y + otherSize.height && newY + itemSize.height > item.y
-      );
-    });
-  };
-
-  const isInsideBounds = (x: number, y: number, itemSize: any) => {
-    return (
-      x >= 0 &&
-      y >= 0 &&
-      x + itemSize.width <= dimensions.width &&
-      y + itemSize.height <= dimensions.height
-    );
-  };
-
   const handleDrag = (e: any, index: number) => {
-    const newX = e.target.x();
-    const newY = e.target.y();
-    const itemSize = getSize(items[index]);
+    const newX = e.target.x() / scale;
+    const newY = e.target.y() / scale;
+    const item = items[index];
+    const { width: w, height: h } = getSize(item);
 
-    if (isInsideBounds(newX, newY, itemSize) && !isOverlapping(newX, newY, index, itemSize)) {
+    const overlapping = isOverlapping(newX, newY, w, h, item.id);
+
+    if (!overlapping) {
       const updated = [...items];
-      updated[index] = {
-        ...updated[index],
-        x: newX,
-        y: newY
-      };
+      updated[index] = { ...item, x: newX, y: newY, unplaced: newX > length };
       setItems(updated);
     } else {
-      // revert to previous position (do NOT recompute layout)
-      e.target.to({ x: items[index].x, y: items[index].y });
+      e.target.to({ x: item.x * scale, y: item.y * scale });
     }
   };
 
   return (
-    <div className="bg-white rounded shadow p-4">
+    <div className="bg-white rounded shadow p-4" ref={containerRef}>
       <h2 className="text-lg font-semibold mb-2">Truck Canvas</h2>
-      <div className="overflow-auto border">
-        <Stage width={dimensions.width} height={dimensions.height} className="bg-gray-100">
-          <Layer>
-            <Rect x={0} y={0} width={dimensions.width} height={dimensions.height} fill="#fefefe" stroke="#000" strokeWidth={2} />
-            {items.map((item, index) => {
-              const { width, height } = getSize(item);
-              return (
-                <Rect
-                  key={item.id}
-                  x={item.x}
-                  y={item.y}
-                  width={width}
-                  height={height}
-                  fill="#c084fc"
-                  stroke="#7e22ce"
-                  strokeWidth={1}
+      <Stage width={(length + 600) * scale} height={width * scale} className="bg-gray-100">
+        <Layer>
+          <Rect x={0} y={0} width={length * scale} height={width * scale} stroke="black" strokeWidth={2} fill="#f9fafb" />
+          {items.map((item, index) => {
+            const { width: w, height: h } = getSize(item);
+            const label = `${index + 1}`;
+            const fill = {
+              pallet: '#60a5fa',
+              ewc: '#34d399',
+              tank: '#f87171'
+            }[item.type?.toLowerCase()] || '#ddd';
+
+            const opacity = item.unplaced ? 0.5 : 1;
+
+            return item.diameter ? (
+              <React.Fragment key={item.id}>
+                <Circle
+                  x={(item.x + w / 2) * scale}
+                  y={(item.y + w / 2) * scale}
+                  radius={(w / 2) * scale}
+                  fill={fill}
+                  stroke="black"
+                  opacity={opacity}
                   draggable
                   onDragEnd={(e) => handleDrag(e, index)}
                 />
-              );
-            })}
-            <Text text="Truck Floor" x={10} y={10} fontSize={16} fill="#555" />
-          </Layer>
-        </Stage>
-      </div>
+                <Text x={(item.x + 4) * scale} y={(item.y + 4) * scale} text={label} fontSize={10} fill="#000" />
+              </React.Fragment>
+            ) : (
+              <React.Fragment key={item.id}>
+                <Rect
+                  x={item.x * scale}
+                  y={item.y * scale}
+                  width={w * scale}
+                  height={h * scale}
+                  fill={fill}
+                  stroke="black"
+                  opacity={opacity}
+                  draggable
+                  onDragEnd={(e) => handleDrag(e, index)}
+                />
+                <Text x={(item.x + 4) * scale} y={(item.y + 4) * scale} text={label} fontSize={10} fill="#000" />
+              </React.Fragment>
+            );
+          })}
+        </Layer>
+      </Stage>
     </div>
   );
 }
