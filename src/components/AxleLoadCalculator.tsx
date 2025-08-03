@@ -38,8 +38,8 @@ export default function AxleLoadCalculator({ items }: Props) {
       frontAxle: frontLoad,
       rearAxle: rearLoad,
       warnings: [
-        frontLoad > 7500 ? '⚠️ Front axle exceeds 7.5t' : null,
-        rearLoad > 11500 ? '⚠️ Rear axle exceeds 11.5t' : null
+        frontLoad > 10000 ? '⚠️ Front axle exceeds 710t' : null,
+        rearLoad > 14000 ? '⚠️ Rear axle exceeds 14t' : null
       ].filter(Boolean)
     };
   }, [items, frontAxle, rearAxle]);

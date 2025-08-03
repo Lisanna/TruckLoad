@@ -1,4 +1,3 @@
-// src/components/ItemForm.tsx
 import React, { useState } from 'react';
 
 interface Props {
@@ -6,13 +5,14 @@ interface Props {
 }
 
 export default function ItemForm({ onAddItems }: Props) {
+  const [selectedOption, setSelectedOption] = useState('pallet');
   const [form, setForm] = useState({
     type: 'pallet',
     length: 120,
     width: 80,
     diameter: 0,
     weight: 25,
-    quantity: ''
+    quantity: '1'
   });
 
   const handleChange = (field: string, value: string | number) => {
@@ -20,14 +20,16 @@ export default function ItemForm({ onAddItems }: Props) {
   };
 
   const handleTypeChange = (value: string) => {
+    setSelectedOption(value);
+
     if (value === 'tank_small') {
-      setForm({ type: 'tank', diameter: 60, length: 0, width: 0, weight: 50, quantity: '' });
+      setForm({ type: 'tank', diameter: 60, length: 0, width: 0, weight: 50, quantity: '1' });
     } else if (value === 'tank_large') {
-      setForm({ type: 'tank', diameter: 100, length: 0, width: 0, weight: 80, quantity: '' });
+      setForm({ type: 'tank', diameter: 100, length: 0, width: 0, weight: 80, quantity: '1' });
     } else if (value === 'pallet') {
-      setForm({ type: 'pallet', length: 120, width: 80, diameter: 0, weight: 25, quantity: '' });
+      setForm({ type: 'pallet', length: 120, width: 80, diameter: 0, weight: 25, quantity: '1' });
     } else if (value === 'ewc') {
-      setForm({ type: 'ewc', length: 120, width: 80, diameter: 0, weight: 20, quantity: '' });
+      setForm({ type: 'ewc', length: 120, width: 80, diameter: 0, weight: 20, quantity: '1' });
     }
   };
 
@@ -37,13 +39,14 @@ export default function ItemForm({ onAddItems }: Props) {
     if (!qty || qty < 1) return;
 
     const items = Array.from({ length: qty }).map((_, i) => ({
-      id: `${form.type}-${Date.now()}-${i}`,
+      id: `${selectedOption}-${Date.now()}-${i}`,
       type: form.type,
       length: form.length,
       width: form.width,
       diameter: form.diameter,
       weight: form.weight
     }));
+
     onAddItems(items);
     setForm({ ...form, quantity: '' });
   };
@@ -56,10 +59,10 @@ export default function ItemForm({ onAddItems }: Props) {
         Type of item:
         <select
           className="border p-1 rounded ml-2"
-          value={form.type}
+          value={selectedOption}
           onChange={(e) => handleTypeChange(e.target.value)}
         >
-          <option value="pallet">Pallet (80x120)</option>
+          <option value="pallet">Pallet</option>
           <option value="ewc">EWC (stackable)</option>
           <option value="tank_small">Tank (Small)</option>
           <option value="tank_large">Tank (Large)</option>

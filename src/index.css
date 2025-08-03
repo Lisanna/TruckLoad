@@ -1,3 +1,9 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.rotated {
+  transform: rotate(90deg) translateY(100vh);
+  transform-origin: top left;
+  transition: transform 0.3s ease;
+}
