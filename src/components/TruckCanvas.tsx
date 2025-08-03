@@ -11,13 +11,14 @@ interface TruckCanvasProps {
 
 export default function TruckCanvas({ items, setItems, length, width }: TruckCanvasProps) {
   const spacing = 0;
+  const snap = 10;
   const containerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
 
   useEffect(() => {
     if (containerRef.current) {
       const availableWidth = containerRef.current.offsetWidth;
-      const newScale = (availableWidth * 0.95) / (length + 600); // includes staging area
+      const newScale = (availableWidth * 0.95) / (length + 600);
       setScale(newScale);
     }
   }, [length, width]);
@@ -75,20 +76,35 @@ export default function TruckCanvas({ items, setItems, length, width }: TruckCan
     }
   }, [items]);
 
-  const handleDrag = (e: any, index: number) => {
-    const newX = e.target.x() / scale;
-    const newY = e.target.y() / scale;
+  const snapToEdges = (val: number, limit: number, size: number) => {
+    if (Math.abs(val) < snap) return 0;
+    if (Math.abs(val - (limit - size)) < snap) return limit - size;
+    return val;
+  };
+
+  const isOutOfBounds = (x: number, y: number, w: number, h: number) => {
+    return x < 0 || y < 0 || x + w > length || y + h > width;
+  };
+
+  const handleDragEnd = (e: any, index: number) => {
+    const node = e.target;
+    let newX = node.x() / scale;
+    let newY = node.y() / scale;
     const item = items[index];
     const { width: w, height: h } = getSize(item);
 
-    const overlapping = isOverlapping(newX, newY, w, h, item.id);
+    if (newX + w <= length) newX = snapToEdges(newX, length, w);
+    if (newY + h <= width) newY = snapToEdges(newY, width, h);
 
-    if (!overlapping) {
+    const overlapping = isOverlapping(newX, newY, w, h, item.id);
+    const outOfBounds = isOutOfBounds(newX, newY, w, h);
+
+    if (!overlapping && !outOfBounds) {
       const updated = [...items];
       updated[index] = { ...item, x: newX, y: newY, unplaced: newX > length };
       setItems(updated);
     } else {
-      e.target.to({ x: item.x * scale, y: item.y * scale });
+      node.to({ x: item.x * scale, y: item.y * scale, duration: 0.1 });
     }
   };
 
@@ -119,7 +135,7 @@ export default function TruckCanvas({ items, setItems, length, width }: TruckCan
                   stroke="black"
                   opacity={opacity}
                   draggable
-                  onDragEnd={(e) => handleDrag(e, index)}
+                  onDragEnd={(e) => handleDragEnd(e, index)}
                 />
                 <Text x={(item.x + 4) * scale} y={(item.y + 4) * scale} text={label} fontSize={10} fill="#000" />
               </React.Fragment>
@@ -134,7 +150,7 @@ export default function TruckCanvas({ items, setItems, length, width }: TruckCan
                   stroke="black"
                   opacity={opacity}
                   draggable
-                  onDragEnd={(e) => handleDrag(e, index)}
+                  onDragEnd={(e) => handleDragEnd(e, index)}
                 />
                 <Text x={(item.x + 4) * scale} y={(item.y + 4) * scale} text={label} fontSize={10} fill="#000" />
               </React.Fragment>

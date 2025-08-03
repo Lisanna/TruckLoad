@@ -5,13 +5,6 @@ interface Props {
   onAddItems: (items: any[]) => void;
 }
 
-const defaultOptions = {
-  pallet: { type: 'pallet', length: 120, width: 80, weight: 100 },
-  ewc: { type: 'ewc', length: 120, width: 80, weight: 20 },
-  tank_small: { type: 'tank', diameter: 60, weight: 50 },
-  tank_large: { type: 'tank', diameter: 100, weight: 80 }
-};
-
 export default function ItemForm({ onAddItems }: Props) {
   const [form, setForm] = useState({
     type: 'pallet',
@@ -24,6 +17,18 @@ export default function ItemForm({ onAddItems }: Props) {
 
   const handleChange = (field: string, value: string | number) => {
     setForm({ ...form, [field]: value });
+  };
+
+  const handleTypeChange = (value: string) => {
+    if (value === 'tank_small') {
+      setForm({ type: 'tank', diameter: 60, length: 0, width: 0, weight: 50, quantity: '' });
+    } else if (value === 'tank_large') {
+      setForm({ type: 'tank', diameter: 100, length: 0, width: 0, weight: 80, quantity: '' });
+    } else if (value === 'pallet') {
+      setForm({ type: 'pallet', length: 120, width: 80, diameter: 0, weight: 25, quantity: '' });
+    } else if (value === 'ewc') {
+      setForm({ type: 'ewc', length: 120, width: 80, diameter: 0, weight: 20, quantity: '' });
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -48,15 +53,16 @@ export default function ItemForm({ onAddItems }: Props) {
       <h2 className="text-lg font-semibold">Add Item</h2>
 
       <label className="block text-sm">
-        Type:
+        Type of item:
         <select
           className="border p-1 rounded ml-2"
           value={form.type}
-          onChange={(e) => handleChange('type', e.target.value)}
+          onChange={(e) => handleTypeChange(e.target.value)}
         >
           <option value="pallet">Pallet (80x120)</option>
           <option value="ewc">EWC (stackable)</option>
-          <option value="tank">Tank</option>
+          <option value="tank_small">Tank (Small)</option>
+          <option value="tank_large">Tank (Large)</option>
         </select>
       </label>
 
@@ -94,7 +100,7 @@ export default function ItemForm({ onAddItems }: Props) {
       )}
 
       <label className="block text-sm">
-        Weight (kg):
+        Weight per item (kg):
         <input
           type="number"
           className="border p-1 rounded ml-2"
@@ -106,11 +112,11 @@ export default function ItemForm({ onAddItems }: Props) {
       <label className="block text-sm">
         Quantity:
         <input
-          type="number"
+          type="text"
           className="border p-1 rounded ml-2"
           value={form.quantity}
           onChange={(e) => handleChange('quantity', e.target.value)}
-          placeholder="e.g. 5"
+          placeholder="e.g. 30"
         />
       </label>
 
